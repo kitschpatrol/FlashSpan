@@ -2,8 +2,8 @@
 // ermika@gmail.com
 // http://kitschpatrol.com
 
-// This software is licensed under the Creative Commons GNU GPL
-// http://creativecommons.org/licenses/GPL/2.0/
+// This software is licensed under the GNU LGPL
+// http://www.gnu.org/licenses/lgpl.html
 
 // BigScreen essentially provides a canvas larger than the flash stage
 // all clients draw the exact same thing to the BigScreen, but each

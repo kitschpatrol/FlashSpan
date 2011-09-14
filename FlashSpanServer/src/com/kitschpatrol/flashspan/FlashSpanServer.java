@@ -2,8 +2,8 @@
 // ermika@gmail.com
 // http://kitschpatrol.com
 
-// This software is licensed under the Creative Commons GNU GPL
-// http://creativecommons.org/licenses/GPL/2.0/
+// This software is licensed under the GNU LGPL
+// http://www.gnu.org/licenses/lgpl.html
 
 // FlashSpan is designed to span Flash content accross multiple computers / monitors / projectors
 // It was originally written for the Newsworthy project at the Hyde Park Art Center

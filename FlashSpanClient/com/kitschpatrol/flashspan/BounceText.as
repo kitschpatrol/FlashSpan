@@ -2,8 +2,8 @@
 // ermika@gmail.com
 // http://kitschpatrol.com
 
-// This software is licensed under the Creative Commons GNU GPL
-// http://creativecommons.org/licenses/GPL/2.0/
+// This software is licensed under the GNU LGPL
+// http://www.gnu.org/licenses/lgpl.html
 
 // BounceText provides a crude test case for FlashSpan
 
