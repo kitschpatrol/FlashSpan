@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Build File" basedir="." default="build">
+	
+	<!-- External Settings -->
+    <property file="${basedir}/build.properties" description="Subjective properties." />	
+	
+	<!-- Required for OSX 10.6 / Snow Leopard Performance -->
+	<condition property="local.d32" value="-d32" >
+		<and>
+			<equals arg1="${sun.arch.data.model}" arg2="64"/>
+			<equals arg1="${os.arch}" arg2="x86_64"/>
+			<os family="mac"/>
+		</and>
+	</condition>
+	
+	
+	<!-- Ant Contrib -->
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+	  <classpath>
+	    <pathelement location="${basedir}/build-resources/ant-contrib/ant-contrib-1.0b3.jar"/>
+	  </classpath>
+	</taskdef>
+	
+    <!-- Compilers and tools -->
+    <property name="MXMLC" value="${SDK_HOME}/lib/mxmlc.jar"/>
+    <property name="COMPC" value="${SDK_HOME}/lib/compc.jar"/>
+    <property name="ADL" value="${SDK_HOME}/bin/adl"/>
+    <property name="ADT" value="${SDK_HOME}/lib/adt.jar"/>
+
+    <!-- Conditional target directories, get overwritten depending on debug or release -->
+	<var name="debug" value="false" />
+	<var name="libraryOutputDir" value="${LIBRARY_RELEASE_DIR}" />
+	<var name="exampleAppOutputDir" value="${EXAMPLE_APP_RELEASE_DIR}" />	
+
+
+<!-- Commands to actually use: libcompile, clean, libcompile, libcompiledebug, examplecompile, examplecompiledebug,   -->
+
+	<!-- Adobe garbage, get rid of this? -->
+    <property name="APP_ROOT_FILE" value="${APP_NAME}.swf"/>
+    <property name="APP_DESCRIPTOR" value="${basedir}/${APP_NAME}-app.xml"/>
+    <property name="AIR_NAME" value="${APP_NAME}.air"/>
+    <property name="STORETYPE" value="pkcs12"/>
+    <property name="KEYSTORE" value="ExampleCert.p12"/>
+    
+    <target name="clean" description="clean up">
+        <delete dir="${LIBRARY_DEBUG_DIR}"/>	
+        <delete dir="${LIBRARY_RELEASE_DIR}"/>	
+        <delete dir="${EXAMPLE_APP_BUILD_DIR}"/>
+        <delete dir="${EXAMPLE_APP_DEBUG_DIR}"/>
+        <delete dir="${EXAMPLE_APP_RELEASE_DIR}"/>
+    </target>
+
+     <target name="init" depends="clean">
+        <mkdir dir="${LIBRARY_RELEASE_DIR}"/>
+        <mkdir dir="${EXAMPLE_APP_BUILD_DIR}"/>
+        <mkdir dir="${EXAMPLE_APP_RELEASE_DIR}"/>
+    </target>
+	
+	<target name="setdebug">
+		<echo message="Debug mode active" />
+		<var name="debug" value="true" />
+		<var name="libraryOutputDir" value="${LIBRARY_DEBUG_DIR}" />
+		<var name="exampleAppOutputDir" value="${EXAMPLE_APP_DEBUG_DIR}" />
+		<echo message="Library output: ${libraryOutputDir}" />
+		<echo message="Example output: ${exampleAppOutputDir}" />		
+        <mkdir dir="${EXAMPLE_APP_DEBUG_DIR}" />
+        <mkdir dir="${LIBRARY_DEBUG_DIR}" />	
+	</target>
+	
+	
+	<!-- The Library -->
+	<target name="libcompile" depends="init, libcompilebase">
+		<echo message="Compiled library in release mode" />
+	</target>
+	
+	<target name="libcompiledebug" depends="init, setdebug, libcompilebase">
+		<echo message="Compiled library in debug mode" />
+	</target>
+	
+	<target name="libcompilebase">
+		<!-- Compile the library to an SWC -->		
+		<java jar="${COMPC}" fork="true" failonerror="true">
+			<arg value="-debug=${debug}"/>
+			<arg value="+flexlib=${SDK_HOME}/frameworks"/>
+			<arg value="+configname=air"/>
+			<arg value="-include-sources=${basedir}/FlashSpanLibrary/src" />
+			<arg value="-verbose-stacktraces=${debug}" />
+			<arg value="-output=${libraryOutputDir}/${LIBRARY_NAME}.swc" />			
+		</java>
+	</target>
+	
+	<!-- The Example -->
+    <target name="examplecompile" depends="libcompile, examplecompilebase">
+		<echo message="Compiled example in release mode" />
+    </target>	
+	
+    <target name="examplecompiledebug" depends="libcompiledebug, examplecompilebase">
+		<echo message="Compiled example in debug mode" />
+    </target>
+
+	<target name="examplecompilebase">
+		<!-- Compile the example to an SWF -->
+        <java jar="${MXMLC}" fork="true" failonerror="true">
+            <arg value="-debug=${debug}"/>
+            <arg value="+flexlib=${SDK_HOME}/frameworks"/>
+            <arg value="+configname=air"/>
+            <arg value="-file-specs=${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}.as"/>
+			<arg value="-verbose-stacktraces=${debug}" />
+			<arg value="-include-libraries+=${libraryOutputDir}/${LIBRARY_NAME}.swc" />				
+            <arg value="-output=${exampleAppOutputDir}/${EXAMPLE_APP_NAME}.swf"/>
+        </java>
+
+		<!-- copy the app xml -->
+		<copy file="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml" todir="${exampleAppOutputDir}" />
+
+		<!-- point to the correct swf -->
+		<replace file="${exampleAppOutputDir}/${EXAMPLE_APP_NAME}-app.xml" token="[This value will be overwritten by Flash Builder in the output app.xml]" value="${EXAMPLE_APP_NAME}.swf"/>
+	</target>
+	
+	<!-- Release Builds NOT NEEDED SINCE EXAMPLE IS JUST AN EXAMPLE? -->
+    <target name="releasecompile" depends="init">
+        <java jar="${MXMLC.JAR}" fork="true" failonerror="true">
+            <arg value="-debug=false"/>
+            <arg value="+flexlib=${SDK_HOME}/frameworks"/>
+            <arg value="+configname=air"/>
+            <arg value="-file-specs=${MAIN_SOURCE_FILE}"/>
+            <arg value="-output=${build}/${APP_ROOT_FILE}"/>
+        </java>
+    </target>
+
+    <!-- <target name="test" depends="debugcompile">
+        <exec executable="${ADL}">
+            <arg value="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}-app.xml"/>
+          </exec> 
+    </target> -->
+
+    <target name="package" depends="releasecompile">
+        <java jar="${ADT.JAR}" fork="true" failonerror="true">
+            <arg value="-package"/>
+            <arg value="-storetype"/>
+            <arg value="${STORETYPE}"/>
+            <arg value="-keystore"/>
+            <arg value="${KEYSTORE}"/>
+            <arg value="${release}/${AIR_NAME}"/>
+            <arg value="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml"/>
+            <arg value="-C"/>
+            <arg value="${build}"/>
+            <arg value="${APP_ROOT_FILE}"/>
+            <arg value="-C"/>
+            <arg value="${assets}"/>
+            <arg value="icons"/>
+        </java>
+    </target>
+
+
+</project>

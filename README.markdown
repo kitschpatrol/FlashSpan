@@ -25,3 +25,15 @@ FlashSpan is licensed under the GNU Lesser General Public License. You may link 
 Contact
 =======
 [Eric Mika](http://ericmika.com)
+
+
+Dependencies
+============
+Adobe Flex SDK (4.5.1+)
+Python (2.6+)
+Apache Ant (?.?+)
+
+
+You'd think the AIR SDK would be enough for compiling AIR apps, but it doesn't include the Ant tools that ship with the Flex SDK.
+
+Due to the complexity involved in testing multiple instances of an AIR app on one machine, the project relies on custom Ant built files for compilation and testing.

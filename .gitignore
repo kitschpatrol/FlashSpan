@@ -1,1 +1,9 @@
 .DS_Store
+/.metadata/
+/lib-debug/
+/org.eclipse.core.resources.prefs
+*.settings
+*/bin-debug/*
+/FlashSpanLibrary/bin/
+/flash_builder_test_dump.xml
+/example-debug/
