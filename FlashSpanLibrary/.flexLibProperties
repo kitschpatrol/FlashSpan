@@ -2,6 +2,7 @@
 <flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
   <includeClasses>
     <classEntry path="com.kitschpatrol.flashspan.FlashSpan"/>
+    <classEntry path="com.kitschpatrol.flashspan.Settings"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

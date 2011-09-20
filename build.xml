@@ -7,9 +7,9 @@
 	<!-- Required for OSX 10.6 / Snow Leopard Performance -->
 	<condition property="local.d32" value="-d32" >
 		<and>
-			<equals arg1="${sun.arch.data.model}" arg2="64"/>
-			<equals arg1="${os.arch}" arg2="x86_64"/>
-			<os family="mac"/>
+			<equals arg1="${sun.arch.data.model}" arg2="64" />
+			<equals arg1="${os.arch}" arg2="x86_64" />
+			<os family="mac" />
 		</and>
 	</condition>
 	
@@ -17,15 +17,33 @@
 	<!-- Ant Contrib -->
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 	  <classpath>
-	    <pathelement location="${basedir}/build-resources/ant-contrib/ant-contrib-1.0b3.jar"/>
+	    <pathelement location="${basedir}/build-resources/ant-contrib-1.0b3.jar" />
 	  </classpath>
 	</taskdef>
 	
+	<taskdef name="for" classname="net.sf.antcontrib.logic.ForTask" onerror="fail">
+		<classpath>
+			<pathelement location="${basedir}/build-resources/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+	
+	<!-- XML Task http://today.java.net/pub/a/today/2006/11/01/xml-manipulation-using-xmltask.html -->
+	<!-- Note ":" namespace weirdness in xpaths -->
+	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask" onerror="fail">
+		<classpath>
+			<pathelement location="${basedir}/build-resources/xmltask.jar" />
+		</classpath>
+	</taskdef>
+
+
+
+
     <!-- Compilers and tools -->
-    <property name="MXMLC" value="${SDK_HOME}/lib/mxmlc.jar"/>
-    <property name="COMPC" value="${SDK_HOME}/lib/compc.jar"/>
-    <property name="ADL" value="${SDK_HOME}/bin/adl"/>
-    <property name="ADT" value="${SDK_HOME}/lib/adt.jar"/>
+    <property name="MXMLC" value="${SDK_HOME}/lib/mxmlc.jar" />
+    <property name="COMPC" value="${SDK_HOME}/lib/compc.jar" />
+    <property name="ADL" value="${SDK_HOME}/bin/adl" />
+    <property name="ADT" value="${SDK_HOME}/lib/adt.jar" />
+    <property name="TEST_BUILDER" value="${basedir}/build-resources/multi_screen_test.py" />
 
     <!-- Conditional target directories, get overwritten depending on debug or release -->
 	<var name="debug" value="false" />
@@ -33,27 +51,28 @@
 	<var name="exampleAppOutputDir" value="${EXAMPLE_APP_RELEASE_DIR}" />	
 
 
-<!-- Commands to actually use: libcompile, clean, libcompile, libcompiledebug, examplecompile, examplecompiledebug,   -->
+<!-- Commands to actually use: clean, libcompile, libcompiledebug, examplecompile, examplecompiledebug,   -->
 
 	<!-- Adobe garbage, get rid of this? -->
-    <property name="APP_ROOT_FILE" value="${APP_NAME}.swf"/>
-    <property name="APP_DESCRIPTOR" value="${basedir}/${APP_NAME}-app.xml"/>
-    <property name="AIR_NAME" value="${APP_NAME}.air"/>
-    <property name="STORETYPE" value="pkcs12"/>
-    <property name="KEYSTORE" value="ExampleCert.p12"/>
+    <property name="APP_ROOT_FILE" value="${APP_NAME}.swf" />
+    <property name="APP_DESCRIPTOR" value="${basedir}/${APP_NAME}-app.xml" />
+    <property name="AIR_NAME" value="${APP_NAME}.air" />
+    <property name="STORETYPE" value="pkcs12" />
+    <property name="KEYSTORE" value="ExampleCert.p12" />
     
     <target name="clean" description="clean up">
-        <delete dir="${LIBRARY_DEBUG_DIR}"/>	
-        <delete dir="${LIBRARY_RELEASE_DIR}"/>	
-        <delete dir="${EXAMPLE_APP_BUILD_DIR}"/>
-        <delete dir="${EXAMPLE_APP_DEBUG_DIR}"/>
-        <delete dir="${EXAMPLE_APP_RELEASE_DIR}"/>
+        <delete dir="${LIBRARY_DEBUG_DIR}" />	
+        <delete dir="${LIBRARY_RELEASE_DIR}" />	
+        <delete dir="${EXAMPLE_APP_BUILD_DIR}" />
+        <delete dir="${EXAMPLE_APP_DEBUG_DIR}" />
+        <delete dir="${EXAMPLE_APP_RELEASE_DIR}" />
+        <delete dir="${TEST_DIR}" />
     </target>
 
      <target name="init" depends="clean">
-        <mkdir dir="${LIBRARY_RELEASE_DIR}"/>
-        <mkdir dir="${EXAMPLE_APP_BUILD_DIR}"/>
-        <mkdir dir="${EXAMPLE_APP_RELEASE_DIR}"/>
+        <mkdir dir="${LIBRARY_RELEASE_DIR}" />
+        <mkdir dir="${EXAMPLE_APP_BUILD_DIR}" />
+        <mkdir dir="${EXAMPLE_APP_RELEASE_DIR}" />
     </target>
 	
 	<target name="setdebug">
@@ -80,9 +99,9 @@
 	<target name="libcompilebase">
 		<!-- Compile the library to an SWC -->		
 		<java jar="${COMPC}" fork="true" failonerror="true">
-			<arg value="-debug=${debug}"/>
-			<arg value="+flexlib=${SDK_HOME}/frameworks"/>
-			<arg value="+configname=air"/>
+			<arg value="-debug=${debug}" />
+			<arg value="+flexlib=${SDK_HOME}/frameworks" />
+			<arg value="+configname=air" />
 			<arg value="-include-sources=${basedir}/FlashSpanLibrary/src" />
 			<arg value="-verbose-stacktraces=${debug}" />
 			<arg value="-output=${libraryOutputDir}/${LIBRARY_NAME}.swc" />			
@@ -101,54 +120,126 @@
 	<target name="examplecompilebase">
 		<!-- Compile the example to an SWF -->
         <java jar="${MXMLC}" fork="true" failonerror="true">
-            <arg value="-debug=${debug}"/>
-            <arg value="+flexlib=${SDK_HOME}/frameworks"/>
-            <arg value="+configname=air"/>
-            <arg value="-file-specs=${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}.as"/>
+            <arg value="-debug=${debug}" />
+            <arg value="+flexlib=${SDK_HOME}/frameworks" />
+            <arg value="+configname=air" />
+            <arg value="-file-specs=${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}.as" />
 			<arg value="-verbose-stacktraces=${debug}" />
 			<arg value="-include-libraries+=${libraryOutputDir}/${LIBRARY_NAME}.swc" />				
-            <arg value="-output=${exampleAppOutputDir}/${EXAMPLE_APP_NAME}.swf"/>
+            <arg value="-output=${exampleAppOutputDir}/${EXAMPLE_APP_NAME}.swf" />
         </java>
 
-		<!-- copy the app xml -->
-		<copy file="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml" todir="${exampleAppOutputDir}" />
-
-		<!-- point to the correct swf -->
-		<replace file="${exampleAppOutputDir}/${EXAMPLE_APP_NAME}-app.xml" token="[This value will be overwritten by Flash Builder in the output app.xml]" value="${EXAMPLE_APP_NAME}.swf"/>
+		<!-- Copy and change the app xml to point to the local swf -->
+		<xmltask source="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml" dest="${exampleAppOutputDir}/${EXAMPLE_APP_NAME}-app.xml"  failWithoutMatch="true"> 
+			<replace path=" /:application/:initialWindow/:content/text()" withText="${EXAMPLE_APP_NAME}.swf" />
+		</xmltask>
 	</target>
+	
+	
+	<!-- Local multi-instance testing (is a pain) -->	
+	<target name="test" depends="examplecompiledebug">
+		<delete dir="${TEST_DIR}" />
+        <mkdir dir="${TEST_DIR}" />
+
+	    <for param="i" end="${SCREEN_COUNT}"> 
+			<sequential>
+				<if>
+					<equals arg1="@{i}" arg2="0" />
+					<then>
+						<!-- Skip screen zero -->
+					</then>
+					<else>
+						<echo message="Creating files for screen @{i}" />
+						
+						<var name="thisScreenDir" value="${TEST_DIR}/screen-@{i}/" />
+						
+						<!-- Create folder -->
+        				<mkdir dir="${TEST_DIR}/screen-@{i}" />
+						
+						<!-- Copy swf file -->
+						<copy file="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}.swf" todir="${thisScreenDir}" />						
+
+						<!-- Copy and populate settings.ini -->
+						<copy file="${basedir}/build-resources/settings-template.ini" todir="${thisScreenDir}" />
+						<move file="${thisScreenDir}/settings-template.ini" tofile="${thisScreenDir}/settings.ini" />
+
+						<!--  Calculate screen x offset. Test only supports horizontally arranged screens. -->
+						<math result="screenNumberMinusOne" operand1="@{i}" operation="-" operand2="1" datatype="int" />
+						<math result="xOffset" operand1="${SCREEN_WIDTH}" operation="*" operand2="${screenNumberMinusOne}" datatype="int" />
+						
+						<replace file="${thisScreenDir}/settings.ini">
+							<replacefilter token="@screenNumber@" value="@{i}" />
+							<replacefilter token="@screenWidth@" value="${SCREEN_WIDTH}" />
+							<replacefilter token="@screenHeight@" value="${SCREEN_HEIGHT}" />
+							<replacefilter token="@xOffset@" value="${xOffset}" />
+							<replacefilter token="@yOffset@" value="0" />							
+							<replacefilter token="@totalWidth@" value="${TOTAL_WIDTH}" />
+							<replacefilter token="@totalHeight@" value="${TOTAL_HEIGHT}" />
+							<replacefilter token="@scaleFactor@" value="${SCALE_FACTOR}" />
+				        </replace>
+				
+						<!-- Copy and revise app file to have unique ID -->
+						<xmltask source="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}-app.xml" dest="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" failWithoutMatch="true"> 
+							<replace path=" /:application/:id/text()" withText="${EXAMPLE_APP_NAME}@{i}" />
+						</xmltask>
+						
+						<!-- App should bootstrap its own window position, etc. -->
+
+						<!-- Launch with ADL -->
+        				<!-- <sleep seconds="1"/> -->
+						<exec executable="${ADL}" spawn="true">
+							<arg value="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" />
+							<!-- <arg value="-nodebug" /> -->
+						</exec>
+					
+					</else>
+				</if>
+			</sequential> 
+	    </for>	
+		
+		
+		<!-- Creates and launches as many local screens as settings calls for -->
+		<!-- Puts things in folders, creates ini files -->
+		<!-- <exec executable="python" failonerror="true">
+			<arg value="${TEST_BUILDER}" />
+			<arg value="${SCREEN_COUNT}" />
+		</exec> -->
+	</target>
+	
+	
+	
+	
+	
 	
 	<!-- Release Builds NOT NEEDED SINCE EXAMPLE IS JUST AN EXAMPLE? -->
     <target name="releasecompile" depends="init">
         <java jar="${MXMLC.JAR}" fork="true" failonerror="true">
-            <arg value="-debug=false"/>
-            <arg value="+flexlib=${SDK_HOME}/frameworks"/>
-            <arg value="+configname=air"/>
-            <arg value="-file-specs=${MAIN_SOURCE_FILE}"/>
-            <arg value="-output=${build}/${APP_ROOT_FILE}"/>
+            <arg value="-debug=false" />
+            <arg value="+flexlib=${SDK_HOME}/frameworks" />
+            <arg value="+configname=air" />
+            <arg value="-file-specs=${MAIN_SOURCE_FILE}" />
+            <arg value="-output=${build}/${APP_ROOT_FILE}" />
         </java>
     </target>
 
-    <!-- <target name="test" depends="debugcompile">
-        <exec executable="${ADL}">
-            <arg value="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}-app.xml"/>
-          </exec> 
-    </target> -->
+
+
 
     <target name="package" depends="releasecompile">
         <java jar="${ADT.JAR}" fork="true" failonerror="true">
-            <arg value="-package"/>
-            <arg value="-storetype"/>
-            <arg value="${STORETYPE}"/>
-            <arg value="-keystore"/>
-            <arg value="${KEYSTORE}"/>
-            <arg value="${release}/${AIR_NAME}"/>
-            <arg value="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml"/>
-            <arg value="-C"/>
-            <arg value="${build}"/>
-            <arg value="${APP_ROOT_FILE}"/>
-            <arg value="-C"/>
-            <arg value="${assets}"/>
-            <arg value="icons"/>
+            <arg value="-package" />
+            <arg value="-storetype" />
+            <arg value="${STORETYPE}" />
+            <arg value="-keystore" />
+            <arg value="${KEYSTORE}" />
+            <arg value="${release}/${AIR_NAME}" />
+            <arg value="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml" />
+            <arg value="-C" />
+            <arg value="${build}" />
+            <arg value="${APP_ROOT_FILE}" />
+            <arg value="-C" />
+            <arg value="${assets}" />
+            <arg value="icons" />
         </java>
     </target>
 

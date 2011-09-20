@@ -6,7 +6,10 @@ package {
 	public class FlashSpanExample extends Sprite {
 		
 		public function FlashSpanExample() {
-			var flashSpan:FlashSpan = new FlashSpan();	
+			var flashSpan:FlashSpan = new FlashSpan();
+			flashSpan.loadSettings();
+			
+			
 		}
 	}
 }
