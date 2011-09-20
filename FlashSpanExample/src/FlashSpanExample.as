@@ -8,8 +8,6 @@ package {
 		public function FlashSpanExample() {
 			var flashSpan:FlashSpan = new FlashSpan();
 			flashSpan.loadSettings();
-			
-			
 		}
 	}
 }

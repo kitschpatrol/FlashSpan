@@ -4,23 +4,20 @@ package com.kitschpatrol.flashspan
 	import flash.events.IEventDispatcher;
 	import flash.net.DatagramSocket;
 	
-	
 	import flash.filesystem.FileStream;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;	
 	
+	import com.demonsters.debugger.MonsterDebugger;
+	import flash.display.Sprite;	
 	
-	
-	public class FlashSpan extends EventDispatcher
-	{
+	public class FlashSpan extends EventDispatcher {
 		public var settings:Settings;
 		
-		public function FlashSpan(target:IEventDispatcher=null)
-		{
+		public function FlashSpan(target:IEventDispatcher=null) {
 			super(target);
-			trace("flash span constructed");
-			
-			
+			MonsterDebugger.initialize(this);
+			MonsterDebugger.trace(this, "Flash Span Constructed");	
 		}
 		
 		public function loadSettings(filePath:String = "settings.ini"):void {
@@ -36,8 +33,6 @@ package com.kitschpatrol.flashspan
 			
 			// parse ini style
 		}
-		
-		
-		
+
 	}
 }
