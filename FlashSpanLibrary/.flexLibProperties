@@ -3,6 +3,7 @@
   <includeClasses>
     <classEntry path="com.kitschpatrol.flashspan.FlashSpan"/>
     <classEntry path="com.kitschpatrol.flashspan.Settings"/>
+    <classEntry path="com.kitschpatrol.flashspan.NetworkedScreen"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

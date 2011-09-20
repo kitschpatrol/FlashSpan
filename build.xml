@@ -134,22 +134,17 @@
 		<!-- Copy and change the app xml to point to the local swf -->
 		<xmltask source="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml" dest="${exampleAppOutputDir}/${EXAMPLE_APP_NAME}-app.xml"  failWithoutMatch="true"> 
 			<replace path=" /:application/:initialWindow/:content/text()" withText="${EXAMPLE_APP_NAME}.swf" />
+			<replace path=" /:application/:initialWindow/:title/text()" withText="${EXAMPLE_APP_NAME}" />
+			<replace path=" /:application/:initialWindow/:width/text()" withText="${SCREEN_WIDTH}" />
+			<replace path=" /:application/:initialWindow/:height/text()" withText="${SCREEN_HEIGHT}" />
+			<replace path=" /:application/:initialWindow/:x/text()" withText="0" />
+			<replace path=" /:application/:initialWindow/:y/text()" withText="0" />
 		</xmltask>
 		
-		<!-- Copy and populate settings.ini -->
-		<copy file="${basedir}/build-resources/settings-template.ini" todir="${exampleAppOutputDir}" />
-		<move file="${exampleAppOutputDir}/settings-template.ini" tofile="${exampleAppOutputDir}/settings.ini" />
-		
-		<replace file="${exampleAppOutputDir}/settings.ini">
-			<replacefilter token="@screenNumber@" value="1" />
-			<replacefilter token="@screenWidth@" value="${SCREEN_WIDTH}" />
-			<replacefilter token="@screenHeight@" value="${SCREEN_HEIGHT}" />
-			<replacefilter token="@xOffset@" value="0" />
-			<replacefilter token="@yOffset@" value="0" />							
-			<replacefilter token="@totalWidth@" value="${TOTAL_WIDTH}" />
-			<replacefilter token="@totalHeight@" value="${TOTAL_HEIGHT}" />
-			<replacefilter token="@scaleFactor@" value="${SCALE_FACTOR}" />
-        </replace>
+		<!-- Copy and populate settings.xml -->
+		<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${exampleAppOutputDir}/settings.xml"> 
+			<!-- Nothing to do... just copying and renaming? -->
+		</xmltask>
 
 	</target>
 	
@@ -166,68 +161,52 @@
 	</target>
 	
 	
-	<target name="test-multi" depends="example-compile-debug, test-multibase">
+	<target name="test-multi" depends="example-compile-debug, test-multi-base">
 		<echo message="Testing multiple screens" />
 	</target>	
 	
 	<!-- Local multi-instance testing (is a pain) -->	
-	<target name="test-multibase">
+	<target name="test-multi-base">
 		<delete dir="${MULTI_EXAMPLE_APP_DEBUG_DIR}" />
         <mkdir dir="${MULTI_EXAMPLE_APP_DEBUG_DIR}" />
 
-	    <for param="i" end="${SCREEN_COUNT}"> 
+		<math result="screenCountMinusOne" operand1="${SCREEN_COUNT}" operation="-" operand2="1" datatype="int" />
+
+		<echo message="${screenCountMinusOne}" />
+
+	    <for param="i" end="${screenCountMinusOne}"> 
 			<sequential>
-				<if>
-					<equals arg1="@{i}" arg2="0" />
-					<then>
-						<!-- Skip screen zero -->
-					</then>
-					<else>
-						<echo message="Creating files for screen @{i}" />
-						
-						<var name="thisScreenDir" value="${MULTI_EXAMPLE_APP_DEBUG_DIR}/screen-@{i}/" />
-						
-						<!-- Create folder -->
-        				<mkdir dir="${thisScreenDir}" />
-						
-						<!-- Copy swf file -->
-						<copy file="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}.swf" todir="${thisScreenDir}" />						
+				<echo message="Creating files for screen @{i}" />
+			
+				<var name="thisScreenDir" value="${MULTI_EXAMPLE_APP_DEBUG_DIR}/screen-@{i}/" />
+			
+				<!-- Create folder -->
+	     				<mkdir dir="${thisScreenDir}" />
+			
+				<!-- Copy swf file -->
+				<copy file="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}.swf" todir="${thisScreenDir}" />						
 
-						<!-- Copy and populate settings.ini -->
-						<copy file="${basedir}/build-resources/settings-template.ini" todir="${thisScreenDir}" />
-						<move file="${thisScreenDir}/settings-template.ini" tofile="${thisScreenDir}/settings.ini" />
+				<!--  Calculate screen x offset. Test only supports horizontally arranged screens. -->
+				<math result="xOffset" operand1="${SCREEN_WIDTH}" operation="*" operand2="@{i}" datatype="int" />
 
-						<!--  Calculate screen x offset. Test only supports horizontally arranged screens. -->
-						<math result="screenNumberMinusOne" operand1="@{i}" operation="-" operand2="1" datatype="int" />
-						<math result="xOffset" operand1="${SCREEN_WIDTH}" operation="*" operand2="${screenNumberMinusOne}" datatype="int" />
-						
-						<replace file="${thisScreenDir}/settings.ini">
-							<replacefilter token="@screenNumber@" value="@{i}" />
-							<replacefilter token="@screenWidth@" value="${SCREEN_WIDTH}" />
-							<replacefilter token="@screenHeight@" value="${SCREEN_HEIGHT}" />
-							<replacefilter token="@xOffset@" value="${xOffset}" />
-							<replacefilter token="@yOffset@" value="0" />							
-							<replacefilter token="@totalWidth@" value="${TOTAL_WIDTH}" />
-							<replacefilter token="@totalHeight@" value="${TOTAL_HEIGHT}" />
-							<replacefilter token="@scaleFactor@" value="${SCALE_FACTOR}" />
-				        </replace>
-				
-						<!-- Copy and revise app file to have unique ID -->
-						<xmltask source="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}-app.xml" dest="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" failWithoutMatch="true"> 
-							<replace path=" /:application/:id/text()" withText="${EXAMPLE_APP_NAME}@{i}" />
-						</xmltask>
-						
-						<!-- App should bootstrap its own window position, etc. -->
-
-						<!-- Launch with ADL -->
-        				<!-- <sleep seconds="1"/> -->
-						<exec executable="${ADL}" spawn="true">
-							<arg value="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" />
-							<!-- <arg value="-nodebug" /> -->
-						</exec>
-					
-					</else>
-				</if>
+				<!-- Copy and change the settings xml -->
+				<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${thisScreenDir}/settings.xml" failWithoutMatch="true">
+					<replace path=" /settings/thisScreen/id/text()" withText="@{i}" />
+					<replace path=" /settings/thisScreen/xOffset/text()" withText="${xOffset}" />
+				</xmltask>
+	
+				<!-- Copy and revise app file to have unique ID, title, and tiled position on screen -->
+				<xmltask source="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}-app.xml" dest="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" failWithoutMatch="true"> 
+					<replace path=" /:application/:id/text()" withText="${EXAMPLE_APP_NAME}@{i}" />
+					<replace path=" /:application/:initialWindow/:title/text()" withText="${EXAMPLE_APP_NAME} @{i}" />
+					<replace path=" /:application/:initialWindow/:x/text()" withText="${xOffset}" />
+				</xmltask>
+			
+				<!-- Launch with ADL -->
+	     				<!-- <sleep seconds="1"/> -->
+				<exec executable="${ADL}" spawn="true">
+					<arg value="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" />
+				</exec>
 			</sequential> 
 		</for>
 	

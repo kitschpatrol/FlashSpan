@@ -49,7 +49,7 @@
 		<content>[This value will be overwritten by Flash Builder in the output app.xml]</content>
 		
 		<!-- The title of the main window. Optional. -->
-		<!-- <title></title> -->
+		<title>Replaced</title>
 
 		<!-- The type of system chrome to use (either "standard" or "none"). Optional. Default standard. -->
 		<!-- <systemChrome></systemChrome> -->
@@ -70,16 +70,16 @@
 		<!-- <resizable></resizable> -->
 
 		<!-- The window's initial width in pixels. Optional. -->
-		<!-- <width></width> -->
+		<width>0</width>
 
 		<!-- The window's initial height in pixels. Optional. -->
-		<!-- <height></height> -->
+		<height>0</height>
 
 		<!-- The window's initial x position. Optional. -->
-		<!-- <x></x> -->
+		<x>0</x>
 
 		<!-- The window's initial y position. Optional. -->
-		<!-- <y></y> -->
+		<y>0</y>
 
 		<!-- The window's minimum size, specified as a width/height pair in pixels, such as "400 200". Optional. -->
 		<!-- <minSize></minSize> -->

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+	<thisScreen>
+		<id>0</id>
+		<screenWidth>128</screenWidth>
+		<screenHeight>480</screenHeight>
+		<xOffset>0</xOffset>
+		<yOffset>0</yOffset>
+		<totalWidth>640</totalWidth>
+		<totalHeight>480</totalHeight>
+		<scaleFactor>1</scaleFactor>
+		<isServer>auto</isServer>
+	</thisScreen>
+	<networkMap>
+		<screen>
+			<id>0</id>
+			<ip>127.0.0.1</ip>
+			<port>63644</port>
+		</screen>
+		<screen>
+			<id>1</id>
+			<ip>127.0.0.1</ip>
+			<port>63645</port>
+		</screen>
+		<screen>
+			<id>2</id>
+			<ip>127.0.0.1</ip>
+			<port>63646</port>
+		</screen>
+		<screen>
+			<id>3</id>
+			<ip>127.0.0.1</ip>
+			<port>63647</port>
+		</screen>
+		<screen>
+			<id>4</id>
+			<ip>127.0.0.1</ip>
+			<port>63648</port>
+		</screen>
+	</networkMap>
+</settings>
