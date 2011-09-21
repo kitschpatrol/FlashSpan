@@ -1,4 +1,5 @@
 package {
+	import com.bit101.components.*;
 	import com.demonsters.debugger.MonsterDebugger;
 	import com.kitschpatrol.flashspan.FlashSpan;
 	
@@ -10,6 +11,8 @@ package {
 		
 	
 	public class FlashSpanExample extends Sprite {
+
+		private var flashSpan:FlashSpan;		
 		
 		public function FlashSpanExample() {
 			// catch command line args
@@ -24,8 +27,6 @@ package {
 			// useful for testing on a single machine,
 			// in production the automatic ID from IP is probably better
 			
-			var flashSpan:FlashSpan;
-			
 			if  (e.arguments.length > 0) {
 				var screenID:int = e.arguments[0];
 				flashSpan = new FlashSpan(screenID);	
@@ -34,10 +35,11 @@ package {
 				flashSpan = new FlashSpan();
 			}
 			
-						
-			
-			
-			
+			var testButton:PushButton = new PushButton(this, 5, 5, "Broadcast Ping", onBroadcastPing);
+		}
+		
+		private function onBroadcastPing(e:Event):void {
+			flashSpan.broadcastPing();
 		}
 	}
 }

@@ -128,6 +128,7 @@
             <arg value="-file-specs=${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}.as" />
 			<arg value="-verbose-stacktraces=${debug}" />
 			<arg value="-include-libraries+=${libraryOutputDir}/${LIBRARY_NAME}.swc" />
+			<arg value="-library-path=${basedir}/FlashSpanExample/libs" />			
             <arg value="-output=${exampleAppOutputDir}/${EXAMPLE_APP_NAME}.swf" />
         </java>
 

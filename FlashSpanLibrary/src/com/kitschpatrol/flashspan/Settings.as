@@ -60,5 +60,15 @@ package com.kitschpatrol.flashspan {
 		public function setMyID(id:int):void {
 			thisScreen = networkMap[id];
 		}
+		
+		// find a networked screen that matches certain network values
+		public function getScreenByIP(ip:String, port:int):NetworkedScreen {
+			for (var i:int = 0; i < networkMap.length; i++) {
+				if ((networkMap[i].ip == ip) && (networkMap[i].port == port)) {
+					return networkMap[i];
+				}
+			}
+			return null;			
+		}
 	}
 }

@@ -31,6 +31,7 @@
         </excludedEntries>
       </libraryPathEntry>
       <libraryPathEntry kind="3" linkType="1" path="/FlashSpanLibrary/bin/FlashSpanLibrary.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="1" linkType="1" path="libs"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>
