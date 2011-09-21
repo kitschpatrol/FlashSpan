@@ -141,10 +141,16 @@
 			<replace path=" /:application/:initialWindow/:y/text()" withText="0" />
 		</xmltask>
 		
-		<!-- Copy and populate settings.xml -->
+		<!-- Copy over the base template -->
 		<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${exampleAppOutputDir}/settings.xml"> 
-			<!-- Nothing to do... just copying and renaming? -->
+			<!-- Clear the comment placeholder -->
+   			<remove path="//child::comment()"/>
 		</xmltask>
+		
+		<antcall target="add-screen-settings">
+			<param name="screenID" value="0"/>
+			<param name="destination" value="${exampleAppOutputDir}/settings.xml"/>			
+		</antcall>
 
 	</target>
 	
@@ -155,10 +161,36 @@
 	
 	<target name="testbase">
 		<echo message="Launching single screen" />		
+		<!-- Also passed in the screen ID, 0 in this case, as a command line arg -->
 		<exec executable="${ADL}" spawn="true">
 			<arg value="${exampleAppOutputDir}/${EXAMPLE_APP_NAME}-app.xml" />
+			<arg value="--" />
+			<arg value="0" />
 		</exec>
 	</target>
+	
+
+
+
+	<target name="add-screen-settings" description="inserts a node of screen settings xml into the settings file, takes screenID and destination parameters">
+		<!-- Put the screen settings in a buffer -->
+		
+		<!--  Calculate screen x offset. Test only supports horizontally arranged screens. -->
+		<math result="xOffset" operand1="${SCREEN_WIDTH}" operation="*" operand2="${screenID}" datatype="int" />		
+		<math result="port" operand1="${STARTING_PORT}" operation="+" operand2="${screenID}" datatype="int" />				
+		
+		<xmltask source="${basedir}/build-resources/settings-screen-template.xml" destbuffer="screenSettingsBuffer">
+			<replace path=" /screen/id/text()" withText="${screenID}" />
+			<replace path=" /screen/xOffset/text()" withText="${xOffset}" />
+			<replace path=" /screen/port/text()" withText="${port}" />			
+		</xmltask>
+
+		<!-- Add screen settings to template -->
+		<xmltask source="${destination}" dest="${destination}" failWithoutMatch="true" outputter="simple:4">
+			<insert path="/settings/networkMap" buffer="screenSettingsBuffer" />
+
+		</xmltask>
+	</target>	
 	
 	
 	<target name="test-multi" depends="example-compile-debug, test-multi-base">
@@ -171,9 +203,27 @@
         <mkdir dir="${MULTI_EXAMPLE_APP_DEBUG_DIR}" />
 
 		<math result="screenCountMinusOne" operand1="${SCREEN_COUNT}" operation="-" operand2="1" datatype="int" />
-
 		<echo message="${screenCountMinusOne}" />
 
+		<!-- Clear the initial screen setting, going to be replaced below -->
+
+
+		<!-- Revise and put the settings.xml into a buffer -->
+		<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" failWithoutMatch="true">
+			<!-- Clear the comment placeholder -->
+   			<remove path="//child::comment()"/>		
+		</xmltask>
+		
+	    <for param="i" end="${screenCountMinusOne}"> 
+			<sequential>
+				<antcall target="add-screen-settings">
+					<param name="screenID" value="@{i}"/>
+					<param name="destination" value="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml"/>
+				</antcall>	
+			</sequential>		
+		</for>
+
+		<!-- Build the folders -->
 	    <for param="i" end="${screenCountMinusOne}"> 
 			<sequential>
 				<echo message="Creating files for screen @{i}" />
@@ -184,32 +234,31 @@
 	     				<mkdir dir="${thisScreenDir}" />
 			
 				<!-- Copy swf file -->
-				<copy file="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}.swf" todir="${thisScreenDir}" />						
+				<copy file="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}.swf" todir="${thisScreenDir}" />
 
 				<!--  Calculate screen x offset. Test only supports horizontally arranged screens. -->
 				<math result="xOffset" operand1="${SCREEN_WIDTH}" operation="*" operand2="@{i}" datatype="int" />
 
 				<!-- Copy and change the settings xml -->
-				<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${thisScreenDir}/settings.xml" failWithoutMatch="true">
-					<replace path=" /settings/thisScreen/id/text()" withText="@{i}" />
-					<replace path=" /settings/thisScreen/xOffset/text()" withText="${xOffset}" />
-				</xmltask>
+				<xmltask source="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" dest="${thisScreenDir}/settings.xml" />
 	
 				<!-- Copy and revise app file to have unique ID, title, and tiled position on screen -->
 				<xmltask source="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}-app.xml" dest="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" failWithoutMatch="true"> 
-					<replace path=" /:application/:id/text()" withText="${EXAMPLE_APP_NAME}@{i}" />
-					<replace path=" /:application/:initialWindow/:title/text()" withText="${EXAMPLE_APP_NAME} @{i}" />
-					<replace path=" /:application/:initialWindow/:x/text()" withText="${xOffset}" />
+					<replace path="/:application/:id/text()" withText="${EXAMPLE_APP_NAME}@{i}" />
+					<replace path="/:application/:initialWindow/:title/text()" withText="${EXAMPLE_APP_NAME} @{i}" />
+					<replace path="/:application/:initialWindow/:x/text()" withText="${xOffset}" />
 				</xmltask>
 			
-				<!-- Launch with ADL -->
-	     				<!-- <sleep seconds="1"/> -->
+				<!-- Launch with ADL, pass in ID for local testing (production should find ID from static IP) -->
 				<exec executable="${ADL}" spawn="true">
 					<arg value="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" />
+					<arg value="--" />
+					<arg value="@{i}" />
 				</exec>
 			</sequential> 
 		</for>
-	
+		
+		<delete file="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" />
 	</target>
 	
 </project>
