@@ -2,6 +2,7 @@ package {
 	import com.bit101.components.*;
 	import com.demonsters.debugger.MonsterDebugger;
 	import com.kitschpatrol.flashspan.FlashSpan;
+	import com.kitschpatrol.flashspan.SyncEvent;
 	
 	import flash.desktop.NativeApplication;
 	import flash.display.Sprite;
@@ -19,6 +20,8 @@ package {
 			NativeApplication.nativeApplication.addEventListener(InvokeEvent.INVOKE, onInvoke);						
 		}
 		
+		private var label:Label;
+		
 		private function onInvoke(e:InvokeEvent):void {
 			MonsterDebugger.initialize(this);
 			MonsterDebugger.trace(this, "Command line args: " + e.arguments);
@@ -35,11 +38,27 @@ package {
 				flashSpan = new FlashSpan();
 			}
 			
-			var testButton:PushButton = new PushButton(this, 5, 5, "Broadcast Ping", onBroadcastPing);
+			new PushButton(this, 5, 5, "Start", onStartButton);
+			new PushButton(this, 5, 25, "Stop", onStopButton);
+			
+			label = new Label(this, 20, 20, "no");
+			label.scaleX = 5;
+			label.scaleY = 5;			
+			
+			flashSpan.addEventListener(FlashSpan.SYNC_EVENT, onFrameSync);
 		}
 		
-		private function onBroadcastPing(e:Event):void {
-			flashSpan.broadcastPing();
+		private function onStartButton(e:Event):void {
+			flashSpan.start();
 		}
+		
+		private function onStopButton(e:Event):void {
+			flashSpan.stop();
+		}
+		
+		private function onFrameSync(e:SyncEvent):void {
+			label.text = e.frameCount.toString();
+		}
+					
 	}
 }

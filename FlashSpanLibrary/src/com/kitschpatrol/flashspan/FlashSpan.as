@@ -27,15 +27,30 @@ package com.kitschpatrol.flashspan
 		// certified response format
 		// (certified response header)(certified packets sent count)		
 		
+		// Events, where to put
+		public static const SYNC_EVENT:String = "syncEvent";
+		
 		// Todo move into connection class?
 		private var udpSocket:DatagramSocket = new DatagramSocket();
 		private var packetsInWaiting:Vector.<CertifiedPacket> = new Vector.<CertifiedPacket>(0);		
 		
+		private var connectionCheckTimer:Timer; // not used
+		
+		// server stuff
+		private var isServer:Boolean = false;
+		private var isSyncing:Boolean = false;
+		private var syncTimer:Timer;
+		
 		// Message types
 		public static const CERTIFIED_HEADER:String = 'c';
 		public static const CERTIFIED_RESPONSE_HEADER:String = 'r';
-		public static const PING_HEADER:String = 'p';		
+		public static const PING_HEADER:String = 'p';
 		
+		public static const START_HEADER:String = 's';
+		public static const STOP_HEADER:String = 't';
+		public static const SYNC_HEADER:String = 'y';		
+		
+		public var frameCount:uint = 0;
 		
 		public function FlashSpan(screenID:int = -1, settingsPath:String = "settings.xml") {
 			super(null);
@@ -59,11 +74,8 @@ package com.kitschpatrol.flashspan
 				settings.setMyID(screenID);
 			}
 			
-			
-			if (settings.thisScreen.id == 0) {
-				// for now, screen 1 is always server
-			}
-
+			// for now, screen 0 is always server			
+			isServer = (settings.thisScreen.id == 0);
 			
 			// Close the socket if it's already open
 			if (udpSocket.bound) {
@@ -81,9 +93,63 @@ package com.kitschpatrol.flashspan
 			MonsterDebugger.trace(this, "Bound to: " + udpSocket.localAddress + ":" + udpSocket.localPort);
 			
 			// Check for existing servers
+				
+			// Start checking for who is connected
+			// not needed?
+//			settings.thisScreen.connected = true; // obviosly we're connected
+//			connectionCheckTimer = new Timer(500); // check every 500ms?
+//			connectionCheckTimer.addEventListener(TimerEvent.TIMER, connectionCheck);
+//			connectionCheckTimer.start();
+			
+			// based on frame rate? 60fps?
+			syncTimer = new Timer(10);
+			syncTimer.addEventListener(TimerEvent.TIMER, onSyncTimer);
+			syncTimer.stop();
 		}
 		
 		
+		// heartbeat
+		private function connectionCheck(e:TimerEvent):void {
+			MonsterDebugger.trace(this, "Pinging for connection");
+			MonsterDebugger.trace(this, settings);			
+			broadcastPing();
+		}
+				
+		
+		private function onSyncTimer(e:TimerEvent):void {
+			// broadcast sync
+			broadcastMessage(SYNC_HEADER);
+			
+			// send out event locally
+			this.dispatchEvent(new SyncEvent(SYNC_EVENT));
+		}
+		
+		public function start():void {
+			if (isServer) {
+				frameCount = 0;
+				syncTimer.reset();
+				syncTimer.start();
+			}
+			else {
+				// send to server
+				sendCertified(settings.networkMap[0], START_HEADER);
+			}
+		}
+		
+		public function stop():void {
+			if (isServer) {
+				// Stop broadcasting sync messages
+				syncTimer.reset();
+				syncTimer.stop();
+			}
+			else {
+				// send to server
+				sendCertified(settings.networkMap[0], STOP_HEADER);
+			}		
+		}			
+		
+		
+
 		
 		private function onDataReceived(e:DatagramSocketDataEvent):void	{
 			var incoming:String = e.data.readUTFBytes(e.data.bytesAvailable);
@@ -110,8 +176,8 @@ package com.kitschpatrol.flashspan
 					body = incoming.substr(1); // second character onward is the body
 				}
 			
-				MonsterDebugger.trace(this, "Header: " + header);
-				MonsterDebugger.trace(this, "Body: " + body);
+				//MonsterDebugger.trace(this, "Header: " + header);
+				//MonsterDebugger.trace(this, "Body: " + body);
 				
 				switch (header) {
 					case PING_HEADER:
@@ -126,10 +192,30 @@ package com.kitschpatrol.flashspan
 						// disable the alarm!
 						packetsInWaiting[index].disarmTimeout();
 						
+						// mark respondent as connected
+						packetsInWaiting[index].destination.connected = true;
+						
+						
 						// remove the packet in waiting
 						packetsInWaiting.splice(index, 1);
-						break;					
-
+						break;
+					
+					// for server
+					case START_HEADER:
+						start();
+						break;
+						
+					case STOP_HEADER:
+						stop();
+						break;
+					
+					// for broadcast
+					case SYNC_HEADER:
+						this.dispatchEvent(new SyncEvent(SYNC_EVENT));
+						// dispatch event
+						// TODO
+						break;
+						
 					default:
 						MonsterDebugger.trace(this, "Unknown header.");
 						break;
@@ -137,10 +223,14 @@ package com.kitschpatrol.flashspan
 			}
 		}
 		
+
 		
 		protected function onTimeout(packet:CertifiedPacket):void {
 			MonsterDebugger.trace(this, "Send timed out!");
 			MonsterDebugger.trace(this, packet);
+			
+			// mark non-respondent as disconnected
+			packet.destination.connected = false;			
 			
 			// remove the packet
 			packetsInWaiting.splice(packetsInWaiting.indexOf(packet), 1);
@@ -171,7 +261,7 @@ package com.kitschpatrol.flashspan
 		// Sends a packet and requests a conformation from recipient		
 		private function sendCertified(screen:NetworkedScreen, message:String, timeout:int = 500):void {
 			// adds a certification wrapper
-			var certifiedPacket:CertifiedPacket = new CertifiedPacket(message, timeout, onTimeout);
+			var certifiedPacket:CertifiedPacket = new CertifiedPacket(message, screen, timeout, onTimeout);
 			packetsInWaiting.push(certifiedPacket);
 			send(screen, certifiedPacket.toMessage());
 		}

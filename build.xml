@@ -45,7 +45,10 @@
 	<var name="debug" value="false" />
 	<var name="libraryOutputDir" value="${LIBRARY_RELEASE_DIR}" />
 	<var name="exampleAppOutputDir" value="${EXAMPLE_APP_RELEASE_DIR}" />	
-	<var name="multiExampleAppOutputDir" value="${MULTI_EXAMPLE_APP_RELEASE_DIR}" />		
+	<var name="multiExampleAppOutputDir" value="${MULTI_EXAMPLE_APP_RELEASE_DIR}" />
+
+	<math result="screenWidth" operand1="${TOTAL_WIDTH}" operation="/" operand2="${SCREEN_COUNT}" datatype="int" />
+
     
     <target name="usage">
         <echo message="FlashSpan Automated Build Tool" />
@@ -130,14 +133,18 @@
 			<arg value="-include-libraries+=${libraryOutputDir}/${LIBRARY_NAME}.swc" />
 			<arg value="-library-path=${basedir}/FlashSpanExample/libs" />			
             <arg value="-output=${exampleAppOutputDir}/${EXAMPLE_APP_NAME}.swf" />
+			<arg value="-default-frame-rate=60" />
+			<arg value="-default-size" />
+			<arg value="${screenWidth}" />	
+			<arg value="${TOTAL_HEIGHT}" />
         </java>
 
 		<!-- Copy and change the app xml to point to the local swf -->
 		<xmltask source="${basedir}/${EXAMPLE_APP_NAME}/src/${EXAMPLE_APP_NAME}-app.xml" dest="${exampleAppOutputDir}/${EXAMPLE_APP_NAME}-app.xml"  failWithoutMatch="true"> 
 			<replace path=" /:application/:initialWindow/:content/text()" withText="${EXAMPLE_APP_NAME}.swf" />
 			<replace path=" /:application/:initialWindow/:title/text()" withText="${EXAMPLE_APP_NAME}" />
-			<replace path=" /:application/:initialWindow/:width/text()" withText="${SCREEN_WIDTH}" />
-			<replace path=" /:application/:initialWindow/:height/text()" withText="${SCREEN_HEIGHT}" />
+			<replace path=" /:application/:initialWindow/:width/text()" withText="${screenWidth}" />
+			<replace path=" /:application/:initialWindow/:height/text()" withText="${TOTAL_HEIGHT}" />
 			<replace path=" /:application/:initialWindow/:x/text()" withText="0" />
 			<replace path=" /:application/:initialWindow/:y/text()" withText="0" />
 		</xmltask>
@@ -177,13 +184,15 @@
 		<!-- Put the screen settings in a buffer -->
 		
 		<!--  Calculate screen x offset. Test only supports horizontally arranged screens. -->
-		<math result="xOffset" operand1="${SCREEN_WIDTH}" operation="*" operand2="${screenID}" datatype="int" />		
+		<math result="xOffset" operand1="${screenWidth}" operation="*" operand2="${screenID}" datatype="int" />		
 		<math result="port" operand1="${STARTING_PORT}" operation="+" operand2="${screenID}" datatype="int" />				
 		
-		<xmltask source="${basedir}/build-resources/settings-screen-template.xml" destbuffer="screenSettingsBuffer">
+		<xmltask source="${basedir}/build-resources/settings-screen-template.xml" destbuffer="screenSettingsBuffer" failWithoutMatch="true">
 			<replace path=" /screen/id/text()" withText="${screenID}" />
 			<replace path=" /screen/xOffset/text()" withText="${xOffset}" />
 			<replace path=" /screen/port/text()" withText="${port}" />			
+			<replace path=" /screen/screenWidth/text()" withText="${screenWidth}" />
+			<replace path=" /screen/screenHeight/text()" withText="${TOTAL_HEIGHT}" />			
 		</xmltask>
 
 		<!-- Add screen settings to template -->
@@ -212,7 +221,9 @@
 		<!-- Revise and put the settings.xml into a buffer -->
 		<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" failWithoutMatch="true">
 			<!-- Clear the comment placeholder -->
-   			<remove path="//child::comment()"/>		
+   			<remove path="//child::comment()"/>
+			<replace path="/settings/totalWidth/text()" withText="${TOTAL_WIDTH}" />
+			<replace path="/settings/totalHeight/text()" withText="${TOTAL_HEIGHT}" />
 		</xmltask>
 		
 	    <for param="i" end="${screenCountMinusOne}"> 
@@ -238,7 +249,7 @@
 				<copy file="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}.swf" todir="${thisScreenDir}" />
 
 				<!--  Calculate screen x offset. Test only supports horizontally arranged screens. -->
-				<math result="xOffset" operand1="${SCREEN_WIDTH}" operation="*" operand2="@{i}" datatype="int" />
+				<math result="xOffset" operand1="${screenWidth}" operation="*" operand2="@{i}" datatype="int" />
 
 				<!-- Copy and change the settings xml -->
 				<xmltask source="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" dest="${thisScreenDir}/settings.xml" />

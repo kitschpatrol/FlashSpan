@@ -15,13 +15,15 @@ package com.kitschpatrol.flashspan
 		public var packetID:int;		
 		private var timeoutTimer:Timer;
 		private var timeoutCallback:Function;
+		public var destination:NetworkedScreen;
 		
-		public function CertifiedPacket(_message:String, _timeout:int, _timeoutCallback:Function) {
+		public function CertifiedPacket(_message:String, _destination:NetworkedScreen, _timeout:int, _timeoutCallback:Function) {
 			message = _message;
 			timeout = _timeout;
 			timeSent = getTimer();
 			packetID = CertifiedPacket.certifiedPacketCount++;
 			timeoutCallback = _timeoutCallback;
+			destination = _destination;
 			
 			timeoutTimer = new Timer(timeout);
 			timeoutTimer.addEventListener(TimerEvent.TIMER, onTimeout);

@@ -5,6 +5,7 @@
     <classEntry path="com.kitschpatrol.flashspan.Settings"/>
     <classEntry path="com.kitschpatrol.flashspan.NetworkedScreen"/>
     <classEntry path="com.kitschpatrol.flashspan.CertifiedPacket"/>
+    <classEntry path="com.kitschpatrol.flashspan.SyncEvent"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

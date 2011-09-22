@@ -7,7 +7,10 @@ package com.kitschpatrol.flashspan
 		public var screenWidth:int;
 		public var screenHeight:int;
 		public var xOffset:int;
-		public var yOffset:int;				
+		public var yOffset:int;	
+		
+		public var connected:Boolean;
+		
 		
 		// Simple structure for remote computer info.
 		public function NetworkedScreen(screenNode:XML) {
@@ -21,6 +24,8 @@ package com.kitschpatrol.flashspan
 					this[key] = value;
 				}					
 			}
+			
+			connected = false;
 		}
 		
 	}
