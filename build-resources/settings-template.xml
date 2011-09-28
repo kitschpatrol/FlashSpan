@@ -3,7 +3,8 @@
 	<totalWidth>640</totalWidth>
 	<totalHeight>480</totalHeight>
 	<scaleFactor>1</scaleFactor>
-	<server>auto</server>
+	<server>auto</server> <!-- auto or a number -->
+	<syncMode>frame</syncMode> <!-- time or frame -->
 	<networkMap>
 		<!-- Filled in with settings-screen-template.xml -->
 	</networkMap>

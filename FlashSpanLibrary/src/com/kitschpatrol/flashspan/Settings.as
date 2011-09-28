@@ -9,14 +9,16 @@ package com.kitschpatrol.flashspan {
 	import flash.xml.XMLNode;
 	
 	public class Settings extends Object {
-		// A collection of settings. These can be set manually or are loaded from an INI file
+		// A collection of settings. These can be set manually or are loaded from an XML file
 		public static const SERVER_AUTO:String = "auto";
+		public static const SYNC_FRAMES:String = "frame";
+		public static const SYNC_TIME:String = "time";
 		
-		public var totalWidth:uint;
-		public var totalHeight:uint;
+		public var totalWidth:int;
+		public var totalHeight:int;
 		public var scaleFactor:Number;
 		public var server:String;
-		
+		public var syncMode:String;
 		
 		public var thisScreen:NetworkedScreen; // reference...
 		public var networkMap:Vector.<NetworkedScreen>;

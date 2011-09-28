@@ -8,6 +8,7 @@ package com.kitschpatrol.flashspan
 		public var screenHeight:int;
 		public var xOffset:int;
 		public var yOffset:int;	
+		public var latency:int;
 		
 		public var connected:Boolean;
 		
@@ -22,7 +23,7 @@ package com.kitschpatrol.flashspan
 				
 				if (this.hasOwnProperty(key)) {
 					this[key] = value;
-				}					
+				}
 			}
 			
 			connected = false;

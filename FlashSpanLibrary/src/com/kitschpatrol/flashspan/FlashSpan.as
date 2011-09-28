@@ -1,11 +1,15 @@
 package com.kitschpatrol.flashspan
 {
 	import com.demonsters.debugger.MonsterDebugger;
+	import com.kitschpatrol.flashspan.events.CustomMessageEvent;
+	import com.kitschpatrol.flashspan.events.FlashSpanEvent;
+	import com.kitschpatrol.flashspan.events.FrameSyncEvent;
+	import com.kitschpatrol.flashspan.events.TimeSyncEvent;
 	
-	import flash.display.Sprite;
+	import flash.desktop.NativeApplication;
 	import flash.events.DatagramSocketDataEvent;
+	import flash.events.Event;
 	import flash.events.EventDispatcher;
-	import flash.events.IEventDispatcher;
 	import flash.events.TimerEvent;
 	import flash.net.DatagramSocket;
 	import flash.net.NetworkInfo;
@@ -27,8 +31,7 @@ package com.kitschpatrol.flashspan
 		// certified response format
 		// (certified response header)(certified packets sent count)		
 		
-		// Events, where to put
-		public static const SYNC_EVENT:String = "syncEvent";
+		
 		
 		// Todo move into connection class?
 		private var udpSocket:DatagramSocket = new DatagramSocket();
@@ -40,19 +43,27 @@ package com.kitschpatrol.flashspan
 		private var isServer:Boolean = false;
 		private var isSyncing:Boolean = false;
 		private var syncTimer:Timer;
+		private var serverTime:int = 0;
+		private var serverTimeReceived:int = 0;		
 		
 		// Message types
-		public static const CERTIFIED_HEADER:String = 'c';
-		public static const CERTIFIED_RESPONSE_HEADER:String = 'r';
-		public static const PING_HEADER:String = 'p';
+		internal static const CERTIFIED_HEADER:String = "c";
+		private static const CERTIFIED_RESPONSE_HEADER:String = "r";
+		private static const PING_HEADER:String = "p";
 		
-		public static const START_HEADER:String = 's';
-		public static const STOP_HEADER:String = 't';
-		public static const SYNC_HEADER:String = 'y';		
+		private static const START_SYNC_HEADER:String = "s";
+		private static const START_TIME_SYNC_HEADER:String = "n";		
+		private static const STOP_REQUEST_HEADER:String = "t";
+		private static const STOP_COMPLETE_HEADER:String = "o";
+		private static const FRAME_SYNC_HEADER:String = "y";
+		private static const TIME_SYNC_HEADER:String = "m";		
+		private static const QUIT_HEADER:String = "q";
+		private static const CUSTOM_MESSAGE_HEADER:String = "e";
 		
 		public var frameCount:uint = 0;
+		private var seededRandom:Random;
 		
-		public function FlashSpan(screenID:int = -1, settingsPath:String = "settings.xml") {
+		public function FlashSpan(screenID:int = -1, settingsPath:String = "flash_span_settings.xml") {
 			super(null);
 			
 			// set up debugger
@@ -63,6 +74,8 @@ package com.kitschpatrol.flashspan
 			settings = new Settings();
 			settings.load(settingsPath);		
 			
+			// seed it... TODO pass in seed from settings?
+			seededRandom = new Random(1);	
 			
 			// if screen ID is -1, use the IP identification technique
 			if (screenID == -1) {
@@ -79,7 +92,7 @@ package com.kitschpatrol.flashspan
 			
 			// Close the socket if it's already open
 			if (udpSocket.bound) {
-				MonsterDebugger.trace(this, 'Closing existing port');
+				MonsterDebugger.trace(this, "Closing existing port");
 				udpSocket.close();
 				udpSocket = new DatagramSocket();				
 			}
@@ -96,16 +109,18 @@ package com.kitschpatrol.flashspan
 				
 			// Start checking for who is connected
 			// not needed?
-//			settings.thisScreen.connected = true; // obviosly we're connected
+//			settings.thisScreen.connected = true; // obviously we're connected
 //			connectionCheckTimer = new Timer(500); // check every 500ms?
 //			connectionCheckTimer.addEventListener(TimerEvent.TIMER, connectionCheck);
 //			connectionCheckTimer.start();
-			
-			// based on frame rate? 60fps?
-			syncTimer = new Timer(10);
-			syncTimer.addEventListener(TimerEvent.TIMER, onSyncTimer);
-			syncTimer.stop();
 		}
+		
+		
+		// For Time Sync Mode
+		public function getTime():int {
+			// add local time elapsed since last server time update to server time
+			return serverTime + (getTimer() - serverTimeReceived);
+		}		
 		
 		
 		// heartbeat
@@ -116,45 +131,163 @@ package com.kitschpatrol.flashspan
 		}
 				
 		
-		private function onSyncTimer(e:TimerEvent):void {
+		private function onFrameSyncTimer(e:TimerEvent):void {
 			// broadcast sync
-			broadcastMessage(SYNC_HEADER);
-			
-			// send out event locally
-			this.dispatchEvent(new SyncEvent(SYNC_EVENT));
+			broadcastMessage(FRAME_SYNC_HEADER);
+			dispatchFrameSyncEvent();
 		}
+		
+		
+		private var millis:int;
+		private function onTimeSyncTimer(e:TimerEvent):void {
+			// broadcast sync
+			millis = getTimer();
+			
+			// broadcast, factoring latency for each client
+			for each (var screen:NetworkedScreen in settings.networkMap) {
+				if (screen != settings.thisScreen) {
+					sendCertified(screen, TIME_SYNC_HEADER + (millis - (screen.latency / 2)));
+				}
+			}			
+			
+			// dispatch event locally for server
+			dispatchTimeSyncEvent(millis);
+		}
+		
 		
 		public function start():void {
-			if (isServer) {
-				frameCount = 0;
-				syncTimer.reset();
-				syncTimer.start();
+			if (isServer) {			
+				// start syncing
+				if (settings.syncMode == Settings.SYNC_FRAMES) {
+					startFrameSync();	
+				}
+				else if (settings.syncMode == Settings.SYNC_TIME) {
+					startTimeSync();
+				}
+				else {
+					throw new Error("Invalid screen sync mode. Check your settings.xml file.");				
+				}
 			}
 			else {
-				// send to server
-				sendCertified(settings.networkMap[0], START_HEADER);
+				// clients should send request to server
+				sendCertified(settings.networkMap[0], START_SYNC_HEADER);				
 			}
 		}
-		
-		public function stop():void {
-			if (isServer) {
-				// Stop broadcasting sync messages
-				syncTimer.reset();
-				syncTimer.stop();
-			}
-			else {
-				// send to server
-				sendCertified(settings.networkMap[0], STOP_HEADER);
-			}		
-		}			
-		
-		
 
 		
+		private function startFrameSync():void {
+			syncTimer = new Timer(1000 / 50); // TODO best approach to this?
+			syncTimer.addEventListener(TimerEvent.TIMER, onFrameSyncTimer);				
+			syncTimer.start();
+		}
+		
+		
+		private function startTimeSync():void {
+			syncTimer = new Timer(250); // figure this out
+			syncTimer.addEventListener(TimerEvent.TIMER, onTimeSyncTimer);				
+			syncTimer.start();
+		}		
+		
+		
+		public function quitAll():void {
+			// broadcast
+			broadcastMessage(QUIT_HEADER);
+			
+			// quit self
+			quit();
+		}
+		
+		
+		private function quit():void {
+			NativeApplication.nativeApplication.exit();
+		}
+		
+		
+		public function stop():void {
+			if (isSyncing) {
+				if (isServer) {
+					// Stop broadcasting sync messages
+					syncTimer.reset();
+					syncTimer.stop();
+					
+					// remove event listeners
+					if (settings.syncMode == Settings.SYNC_FRAMES) {
+						syncTimer.removeEventListener(TimerEvent.TIMER, onFrameSyncTimer);	
+					}
+					else if (settings.syncMode == Settings.SYNC_TIME) {
+						syncTimer.removeEventListener(TimerEvent.TIMER, onTimeSyncTimer);
+					}
+					
+					
+					// broadcast stop to clients
+					broadcastMessage(STOP_COMPLETE_HEADER);
+					
+					// dispatch stop event locally
+					dispatchStopEvent();
+				}
+				else {
+					// send to server
+					sendCertified(settings.networkMap[0], STOP_REQUEST_HEADER);
+				}
+			}
+		}		
+		
+		
+		
+		// Event dispatch wrappers
+		private function dispatchFrameSyncEvent():void {
+			// send out event locally
+			if (!isSyncing) {
+				dispatchStartEvent();
+			}
+
+			this.dispatchEvent(new FrameSyncEvent(FrameSyncEvent.SYNC, frameCount));
+			frameCount++;			
+		}
+		
+		private function dispatchTimeSyncEvent(time:int):void {
+			// send out event locally
+			if (!isSyncing) {
+				dispatchStartEvent();
+			}
+			
+			// Record the time
+			serverTime = time;
+			serverTimeReceived = getTimer();
+			
+			// Why even listen to this? Client should use .getTime() instead.
+			this.dispatchEvent(new TimeSyncEvent(TimeSyncEvent.SYNC, time));
+		}
+		
+		
+		private function dispatchStopEvent():void {
+			isSyncing = false;
+			this.dispatchEvent(new Event(FlashSpanEvent.STOP));
+		}
+		
+		
+		private function dispatchStartEvent():void {
+			isSyncing = true;
+			this.dispatchEvent(new Event(FlashSpanEvent.START));			
+		}		
+		
+		
+		// returns a full-screen span sprite at the correct offset 
+		public function getSpanSprite():SpanSprite {
+			return new SpanSprite(settings.thisScreen.screenWidth, settings.thisScreen.screenHeight, settings.totalWidth, settings.totalHeight, settings.thisScreen.xOffset, settings.thisScreen.yOffset);
+		}
+
+		
+		public function random():Number {
+			// nicely seeded random
+			return seededRandom.random();
+		}
+		
+
 		private function onDataReceived(e:DatagramSocketDataEvent):void	{
 			var incoming:String = e.data.readUTFBytes(e.data.bytesAvailable);
 			
-			MonsterDebugger.trace(this, "Received from " + e.srcAddress + ":" + e.srcPort + "> " +	incoming);
+			//MonsterDebugger.trace(this, "Received from " + e.srcAddress + ":" + e.srcPort + "> " +	incoming);
 			
 			if (incoming.length > 0) {
 				var header:String = incoming.substr(0, 1); // first character
@@ -187,7 +320,7 @@ package com.kitschpatrol.flashspan
 					case CERTIFIED_RESPONSE_HEADER:						
 						// Calculate packet time, disarm timer, etc.
 						var index:int = findPacketInWaitingIndex(parseInt(body));
-						MonsterDebugger.trace(this, "Latency: " + (getTimer() - packetsInWaiting[index].timeSent) + "ms");
+						packetsInWaiting[index].destination.latency = getTimer() - packetsInWaiting[index].timeSent;
 						
 						// disable the alarm!
 						packetsInWaiting[index].disarmTimeout();
@@ -195,25 +328,43 @@ package com.kitschpatrol.flashspan
 						// mark respondent as connected
 						packetsInWaiting[index].destination.connected = true;
 						
-						
 						// remove the packet in waiting
 						packetsInWaiting.splice(index, 1);
 						break;
 					
 					// for server
-					case START_HEADER:
-						start();
-						break;
+					case START_SYNC_HEADER:
+						start();			
 						
-					case STOP_HEADER:
+					case STOP_REQUEST_HEADER:
 						stop();
 						break;
 					
+					case STOP_COMPLETE_HEADER:
+						// Dispatch stop event
+						dispatchStopEvent();
+						break;
+					
+					case QUIT_HEADER:
+						quit();
+						break;					
+					
 					// for broadcast
-					case SYNC_HEADER:
-						this.dispatchEvent(new SyncEvent(SYNC_EVENT));
-						// dispatch event
-						// TODO
+					case FRAME_SYNC_HEADER:
+						dispatchFrameSyncEvent()
+						break;
+					
+					case TIME_SYNC_HEADER:
+						// Extract time from body!
+						dispatchTimeSyncEvent(parseInt(body));
+						break;		
+					
+					case CUSTOM_MESSAGE_HEADER:
+						var commaIndex:int = body.indexOf(",");
+						var customHeader:String = body.substring(0, commaIndex);
+						var customBody:String = body.substring(commaIndex + 1);	
+						
+						dispatchCustomMessageEvent(customHeader, customBody);
 						break;
 						
 					default:
@@ -223,7 +374,6 @@ package com.kitschpatrol.flashspan
 			}
 		}
 		
-
 		
 		protected function onTimeout(packet:CertifiedPacket):void {
 			MonsterDebugger.trace(this, "Send timed out!");
@@ -237,7 +387,6 @@ package com.kitschpatrol.flashspan
 			
 			// TODO something else? Try again?
 		}
-		
 		
 		
 		// Sends a packet		
@@ -268,7 +417,7 @@ package com.kitschpatrol.flashspan
 		
 		
 		// sends a message to everyone except for the sender
-		public function broadcastMessage(message:String):void {
+		private function broadcastMessage(message:String):void {
 			for each (var screen:NetworkedScreen in settings.networkMap) {
 				if (screen != settings.thisScreen) {
 					send(screen, message);
@@ -276,13 +425,25 @@ package com.kitschpatrol.flashspan
 			}
 		}
 		
-		public function broadcastCertifiedMessage(message:String):void {
+		// sends a custom message to everyone, including self
+		public function broadcastCustomMessage(header:String, message:String = ''):void {
+			for each (var screen:NetworkedScreen in settings.networkMap) {
+				send(screen, CUSTOM_MESSAGE_HEADER + header + "," + message); 
+			}
+		}
+		
+		private function dispatchCustomMessageEvent(header:String, message:String):void {
+			this.dispatchEvent(new CustomMessageEvent(CustomMessageEvent.MESSAGE_RECEIVED, header, message));
+		}
+		
+		private function broadcastCertifiedMessage(message:String):void {
 			for each (var screen:NetworkedScreen in settings.networkMap) {
 				if (screen != settings.thisScreen) {
 					sendCertified(screen, message);
 				}
 			}
 		}
+		
 		
 		// Convenience transmission functions
 		

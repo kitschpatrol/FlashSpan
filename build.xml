@@ -150,14 +150,14 @@
 		</xmltask>
 		
 		<!-- Copy over the base template -->
-		<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${exampleAppOutputDir}/settings.xml"> 
+		<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${exampleAppOutputDir}/flash_span_settings.xml"> 
 			<!-- Clear the comment placeholder -->
    			<remove path="//child::comment()"/>
 		</xmltask>
 		
 		<antcall target="add-screen-settings">
 			<param name="screenID" value="0"/>
-			<param name="destination" value="${exampleAppOutputDir}/settings.xml"/>			
+			<param name="destination" value="${exampleAppOutputDir}/flash_span_settings.xml"/>			
 		</antcall>
 
 	</target>
@@ -218,7 +218,7 @@
 		<!-- Clear the initial screen setting, going to be replaced below -->
 
 
-		<!-- Revise and put the settings.xml into a buffer -->
+		<!-- Revise and put the flash_span_settings.xml into a buffer -->
 		<xmltask source="${basedir}/build-resources/settings-template.xml" dest="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" failWithoutMatch="true">
 			<!-- Clear the comment placeholder -->
    			<remove path="//child::comment()"/>
@@ -252,7 +252,7 @@
 				<math result="xOffset" operand1="${screenWidth}" operation="*" operand2="@{i}" datatype="int" />
 
 				<!-- Copy and change the settings xml -->
-				<xmltask source="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" dest="${thisScreenDir}/settings.xml" />
+				<xmltask source="${MULTI_EXAMPLE_APP_DEBUG_DIR}/settings-temp.xml" dest="${thisScreenDir}/flash_span_settings.xml" />
 	
 				<!-- Copy and revise app file to have unique ID, title, and tiled position on screen -->
 				<xmltask source="${EXAMPLE_APP_DEBUG_DIR}/${EXAMPLE_APP_NAME}-app.xml" dest="${thisScreenDir}/${EXAMPLE_APP_NAME}-app.xml" failWithoutMatch="true"> 
