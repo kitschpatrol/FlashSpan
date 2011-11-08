@@ -19,6 +19,7 @@ package com.kitschpatrol.flashspan
 	import flash.utils.getTimer;
 
 	
+	
 	public class FlashSpan extends EventDispatcher {
 		public var settings:Settings;
 		
@@ -31,9 +32,7 @@ package com.kitschpatrol.flashspan
 		// certified response format
 		// (certified response header)(certified packets sent count)		
 		
-		
-		
-		// Todo move into connection class?
+		// Todo move into connection class? TODO some kind of "monitor connection" setting
 		private var udpSocket:DatagramSocket = new DatagramSocket();
 		private var packetsInWaiting:Vector.<CertifiedPacket> = new Vector.<CertifiedPacket>(0);		
 		

@@ -7,8 +7,7 @@ package com.kitschpatrol.flashspan
 	public class CertifiedPacket extends Object
 	{
 		private static var certifiedPacketCount:uint = 0;
-		
-		
+
 		public var message:String;
 		public var timeout:int;
 		public var timeSent:int;

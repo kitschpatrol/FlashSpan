@@ -7,7 +7,6 @@ package {
 	import com.kitschpatrol.flashspan.events.CustomMessageEvent;
 	import com.kitschpatrol.flashspan.events.FlashSpanEvent;
 	import com.kitschpatrol.flashspan.events.FrameSyncEvent;
-	import com.kitschpatrol.flashspan.events.TimeSyncEvent;
 	
 	import flash.desktop.NativeApplication;
 	import flash.display.Sprite;
@@ -18,12 +17,10 @@ package {
 	import flash.events.MouseEvent;
 	import flash.utils.getTimer;
 
-	
 	public class FlashSpanExample extends Sprite {
-
+		
 		private var flashSpan:FlashSpan;		
 		private var spanSprite:SpanSprite;
-		
 		
 		private var titleLabel:Label;
 		private var syncLabel:Label;
@@ -53,7 +50,7 @@ package {
 				flashSpan = new FlashSpan(screenID);	
 			}
 			else {
-				flashSpan = new FlashSpan();
+				flashSpan = new FlashSpan(flashSpan.getIDfromIP(), "E:\flash_span_settings.xml");
 			}
 			
 			// set up the stage, make sure it's the correct size (some padding seems to get thrown in by the OS)
@@ -62,7 +59,7 @@ package {
 			stage.nativeWindow.width = flashSpan.settings.thisScreen.screenWidth;
 			stage.nativeWindow.height = flashSpan.settings.thisScreen.screenHeight + 20; // compensate for title bar			
 			
-			// the span sprite, includes automatic translation compensation
+			// the span spparrite, includes automatic translation compensation
 			spanSprite = flashSpan.getSpanSprite();
 			addChild(spanSprite);
 			
