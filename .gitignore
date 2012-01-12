@@ -1,4 +1,8 @@
 .DS_Store
+.air
+*.actionScriptProperties
+example-debug-multi
+example-debug
 /.metadata/
 /lib-debug/
 /org.eclipse.core.resources.prefs
