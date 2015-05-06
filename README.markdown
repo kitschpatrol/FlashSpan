@@ -8,7 +8,7 @@ FlashSpan relies on the fact that the code running on each computer should gener
 Some inspiration was draw from Daniel Shiffman’s epic Most Pixels Ever library for Processing, though the projects don’t share source code.
 
 ###History
-FlashSpan was initially developed in 2008 for [Newsworthy Chicago](http://newsworthychicago.com/about/index.php), an interactive installation at the Hyde Park Art Center.
+FlashSpan was initially developed in 2008 for [Newsworthy Chicago](https://vimeo.com/1007076), an interactive installation at the Hyde Park Art Center.
 
 FlashSpan emerged as a means of distributing the project’s live text content across an 80 foot wide video wall powered by 10 projectors and 5 computers.
 
